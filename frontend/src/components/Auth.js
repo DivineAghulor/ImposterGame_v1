@@ -27,7 +27,8 @@ const Auth = () => {
 
             if (response.ok) {
                 if (isLogin) {
-                    login(data.token, username);
+                    // Expect backend to return userId in login response
+                    login(data.token, data.userId);
                     navigate('/dashboard');
                 } else {
                     setMessage({ type: 'success', text: 'Signup successful! Please log in.' });

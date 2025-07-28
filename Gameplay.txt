@@ -1,0 +1,158 @@
+Impostor Question - Gameplay Flow
+
+This document outlines the step-by-step flow of a complete game, detailing the interactions between the frontend, backend, and database.
+
+Participants:
+- User1 (Admin)
+- User2 (Player)
+- User3 (Player)
+- User4 (Player)
+
+---
+
+### Step 1: Authentication
+
+All four users must log in or sign up.
+
+*   **Frontend**: The `Auth.js` component captures username and password. It sends a POST request to `/api/auth/login` or `/api/auth/signup`. Upon success, the received JWT and username are stored in the `AuthContext`, and the user is navigated to the `/dashboard`.
+*   **Backend (API)**: The auth endpoint validates the credentials against the database. For a new user, it hashes the password and creates a new entry. It then generates a JWT containing the `userId` and sends it back to the client.
+*   **Database**: The `Users` table is queried to find a user or updated with a new user entry.
+
+---
+
+### Step 2: Game Creation
+
+User1 decides to host a game.
+
+*   **Frontend**: On the `Dashboard.js` component, User1 enters the desired number of rounds (e.g., 3) and clicks "Create Game". This sends a POST request to `/api/games` with the `totalRounds`.
+*   **Backend (API)**: The `/api/games` endpoint calls the `createGame` function.
+    *   `game.js` (`createGame`):
+        1.  Generates a unique 6-character `gameCode`.
+        2.  Inserts a new record into the `Games` table with the `game_code`, `admin_id` (User1's ID), `total_rounds`, and an initial `game_state` of 'LOBBY'.
+        3.  Returns the new game data to the API handler.
+*   **Database**: A new row is created in the `Games` table.
+*   **Frontend**: Upon receiving a successful response, User1 is automatically navigated to the lobby at `/lobby/:gameCode`.
+
+---
+
+### Step 3: Players Join the Lobby
+
+User1 shares the `gameCode` with Users 2, 3, and 4.
+
+*   **Frontend**: On their `Dashboard.js`, Users 2, 3, and 4 each enter the `gameCode` and click "Join Game". This sends a POST request to `/api/games/:gameCode/join`.
+*   **Backend (API)**: The `/api/games/:gameCode/join` endpoint calls the `joinGame` function.
+    *   `game.js` (`joinGame`):
+        1.  Finds the `game_id` from the `gameCode`.
+        2.  Verifies the game's `game_state` is 'LOBBY'.
+        3.  Inserts a new record into the `Players` table, linking the user's `user_id` to the `game_id`.
+*   **Database**: A new row is added to the `Players` table for each joining user.
+*   **Backend (Socket.IO)**: After a player successfully joins, the server fetches the updated list of all players in the game (usernames, IDs, scores) and emits a `playerUpdate` event to the specific `gameCode` room.
+*   **Frontend**:
+    *   Each joining user is navigated to the `/lobby/:gameCode`.
+    *   The `Lobby.js` component for all four users receives the `playerUpdate` event and re-renders to display the current list of players.
+
+---
+
+### Step 4: Starting the First Round
+
+User1 (Admin) initiates the game.
+
+*   **Frontend**: In `Lobby.js`, User1 sees admin controls. They fill in the "Original Question" and "Impostor Question" and click a button to submit them. This sends a POST request to `/api/games/:gameCode/questions`.
+*   **Backend (API)**: The endpoint calls the `submitQuestions` function.
+    *   `game.js` (`submitQuestions`):
+        1.  Verifies the request is from the admin.
+        2.  Fetches all players for the game from the `Players` table.
+        3.  Randomly selects one player (e.g., User3) to be the impostor for this round.
+        4.  Inserts a new record into the `Rounds` table containing the `game_id`, `round_number` (1), both questions, and the `impostor_player_id` (User3's player ID).
+        5.  Updates the game's row in the `Games` table, setting `game_state` to 'ANSWERING' and `current_round` to 1.
+        6.  Starts a 60-second server-side timer (`setTimeout`) which will trigger the transition to the voting phase.
+*   **Database**: A new row is created in the `Rounds` table. The `Games` table is updated.
+*   **Backend (Socket.IO)**: The server emits a `newRound` event to the `gameCode` room. The payload for each player is tailored:
+    *   User3 (Impostor) receives the impostor question and the role "Impostor".
+    *   Users 1, 2, and 4 receive the original question and the role "Standard".
+*   **Frontend**: All players' `Lobby.js` components receive the `newRound` event and navigate to the `AnsweringView.js`, passing the question and role as state.
+
+---
+
+### Step 5: Answering Phase
+
+All players submit their answers.
+
+*   **Frontend**: The `AnsweringView.js` displays the received question and a 60-second countdown timer. Each user types their answer and clicks submit. This emits a `submitAnswer` event via their socket connection, containing the answer text.
+*   **Backend (Socket.IO)**: The server's `submitAnswer` event listener calls the `submitAnswer` function in `game.js`.
+    *   `game.js` (`submitAnswer`): Finds the correct `round_id` and `player_id` and inserts the submission into the database.
+*   **Database**: A new row is created in the `Submissions` table for each player, containing the `round_id`, `player_id`, and `answer_text`.
+
+---
+
+### Step 6: Voting Phase
+
+The answering timer expires.
+
+*   **Backend**: The 60-second `setTimeout` from Step 4 finishes, calling `transitionToVoting`.
+    *   `game.js` (`transitionToVoting`):
+        1.  Updates the game's `game_state` to 'VOTING' in the database.
+        2.  Fetches all answers for the current round from the `Submissions` table.
+        3.  Emits a `votingPhase` event to the `gameCode` room with the list of answers.
+        4.  Starts a 180-second (3-minute) server-side timer to transition to scoring.
+*   **Database**: The `game_state` in the `Games` table is updated to 'VOTING'.
+*   **Frontend**:
+    *   `AnsweringView.js` receives the `votingPhase` event and navigates all players to `VotingView.js`.
+    *   `VotingView.js` displays the list of anonymous answers and a list of players to vote for. A 3-minute timer is shown.
+    *   Each player clicks a "Vote" button next to a username, which emits a `submitVote` event with the chosen username. It also listens for `voteReceived` events to show a live feed of which players have cast their vote.
+*   **Backend (Socket.IO)**: The `submitVote` listener calls the `submitVote` function in `game.js`.
+    *   `game.js` (`submitVote`): Finds the `player_id` of the voter and the `player_id` of the person they voted for. It then updates the voter's row in the `Submissions` table for the current round, setting the `voted_for_player_id`.
+    *   After successfully saving a vote, the backend emits a `voteReceived` event to the `gameCode` room, containing the username of the player who just voted. This allows the frontend to show a live feed.
+*   **Database**: The `voted_for_player_id` column is populated in the `Submissions` table for each player who votes.
+
+---
+
+### Step 7: Scoring and Results
+
+The voting timer expires.
+
+*   **Backend**: The 180-second `setTimeout` from Step 6 finishes, calling `transitionToScoring`.
+    *   `game.js` (`transitionToScoring`):
+        1.  Updates the game's `game_state` to 'SCORING'.
+        2.  Fetches all votes from the `Submissions` table and tallies them to find the most-voted player.
+        3.  Fetches the `impostor_player_id` from the `Rounds` table.
+        4.  Applies scoring logic (e.g., if the impostor was caught, other players get points; if not, the impostor gets points).
+        5.  Updates the `score` for the relevant players in the `Players` table.
+        6.  Fetches the new scoreboard and the impostor's username.
+        7.  Emits a `roundResult` event to the `gameCode` room with the impostor's name and the updated scores.
+        8.  Immediately calls `transitionToRoundEnd`.
+*   **Database**: The `game_state` in `Games` is updated. The `score` column in the `Players` table is updated for one or more players.
+*   **Frontend**: `VotingView.js` receives the `roundResult` event and navigates to `ResultsView.js`, which displays the round's outcome and the new scoreboard.
+
+---
+
+### Step 8: Round End and Loop
+
+The flow is handled by `transitionToRoundEnd` on the backend.
+
+*   **Backend**:
+    *   `game.js` (`transitionToRoundEnd`):
+        1.  Checks if `current_round` < `total_rounds`. Since 1 < 3, it proceeds.
+        2.  Updates `game_state` to 'ROUND_END', then starts a 5-second timer.
+        3.  After 5 seconds, it updates `game_state` back to 'QUESTION_INPUT'.
+        4.  Emits a `nextRoundReady` event to the `gameCode` room.
+*   **Database**: The `game_state` in the `Games` table is updated twice.
+*   **Frontend**: `ResultsView.js` receives the `nextRoundReady` event.
+    *   All players (Admin and non-admins) are navigated back to the `Lobby.js` view. The component will show question input fields only for the admin, while other players see a "Waiting for admin to start the next round" message.
+
+**The flow then repeats from Step 4 for the remaining rounds.**
+
+---
+
+### Step 9: Game Over
+
+After the final round's results are shown, the game ends.
+
+*   **Backend**:
+    *   `game.js` (`transitionToRoundEnd`):
+        1.  The check `current_round >= total_rounds` (3 >= 3) is now true.
+        2.  Updates the game's `game_state` to 'GAME_OVER'.
+        3.  Fetches the final scores from the `Players` table, ordered from highest to lowest.
+        4.  Emits a `gameOver` event to the `gameCode` room with the final, ranked scoreboard.
+*   **Database**: The final `game_state` in the `Games` table is set to 'GAME_OVER'. All player scores for all rounds have been saved cumulatively in the `Players` table.
+*   **Frontend**: `ResultsView.js` receives the `gameOver` event and navigates all players to the `GameOverView.js`, which displays the final winner and scoreboard. From here, players can navigate back to the dashboard.

@@ -7,10 +7,11 @@ const Lobby = () => {
     const { gameCode } = useParams();
     const navigate = useNavigate();
     const socket = useSocket();
-    const { token, username } = useAuth(); // Assuming username is the user's ID for now
+    const { token, userId } = useAuth(); // Use userId for all logic
 
     const [players, setPlayers] = useState([]);
-    const [isAdmin, setIsAdmin] = useState(false); // This needs to be determined from backend
+    const [game, setGame] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false); // Determined from backend game.admin_id
     const [originalQuestion, setOriginalQuestion] = useState('');
     const [impostorQuestion, setImpostorQuestion] = useState('');
     const [message, setMessage] = useState('');
@@ -19,14 +20,28 @@ const Lobby = () => {
         if (!socket) return;
 
         // Join the game room upon connecting
-        socket.emit('joinGame', { gameCode, userId: username });
+        socket.emit('joinGame', { gameCode, userId });
+
+        // Fetch game info from backend for admin_id
+        const fetchGameInfo = async () => {
+            try {
+                const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/games/${gameCode}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setGame(data.game);
+                    setPlayers(data.players);
+                    setIsAdmin(data.game.admin_id === userId);
+                }
+            } catch (err) {
+                // handle error
+            }
+        };
+        fetchGameInfo();
 
         socket.on('playerUpdate', (data) => {
             setPlayers(data.players);
-            // A simple way to check for admin - the first player is the admin
-            if (data.players.length > 0 && data.players[0].userId === username) {
-                setIsAdmin(true);
-            }
         });
 
         socket.on('newRound', (data) => {
@@ -39,7 +54,7 @@ const Lobby = () => {
             socket.off('playerUpdate');
             socket.off('newRound');
         };
-    }, [socket, gameCode, username, navigate]);
+    }, [socket, gameCode, userId, token, navigate]);
 
     const handleStartGame = async () => {
         // Step 1: Start the game
@@ -73,7 +88,7 @@ const Lobby = () => {
             <div className="players-list">
                 <h3>Players</h3>
                 <ul>
-                    {players.map((p, index) => <li key={index}>{p.userId}</li>)}
+                    {players.map((p, index) => <li key={index}>{p.username || p.userId}</li>)}
                 </ul>
             </div>
 

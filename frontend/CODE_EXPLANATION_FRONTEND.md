@@ -38,8 +38,12 @@ This file documents the code for the Impostor game frontend, broken down by impl
 *   `frontend/src/components/Lobby.js`: The waiting area for the game.
     *   It retrieves the `gameCode` from the URL parameters.
     *   It uses the `useSocket` hook to get the WebSocket instance and listens for events.
+    *   **Game Info Fetch**: On mount, the component fetches the game object from the backend (`/api/games/:gameCode`) to get the `admin_id` and the current list of players.
     *   **Real-time Updates**: It listens for the `playerUpdate` event to display a live list of players who have joined the lobby.
-    *   **Admin View**: It performs a simple check to see if the current user is the admin and, if so, displays the controls to start the game and submit questions. This follows the two-step process defined by the backend.
+    *   **Admin View**: The Lobby UI checks if the logged-in user's ID matches the `admin_id` from the backend game object. If so, it displays two controls:
+        1. A button to start the game, which sends a POST request to `/api/admin/games/:gameCode/start`.
+        2. Input fields for the original and impostor questions, and a button to submit them, which sends a POST request to `/api/admin/games/:gameCode/rounds`.
+      These controls are only visible to the admin. All other players see a message: "Waiting for the Admin to start the game...". This ensures only the admin can transition the game from the lobby to the question input and answering phases.
     *   **Navigation**: It listens for the `newRound` event from the server, which signals that the game is starting. Upon receiving this event, it navigates all players to the `Answering` view for the first round.
 
 ### Files Modified:
