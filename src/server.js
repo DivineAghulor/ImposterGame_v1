@@ -2,6 +2,7 @@
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
+import cors from 'cors';
 import { signup, login } from './auth/auth.js';
 import { authenticateToken } from './auth/middleware.js';
 import { 
@@ -20,8 +21,14 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Allow all origins
+        methods: ["GET", "POST"]
+    }
+});
 
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json());
 
 // Auth routes

@@ -1,0 +1,313 @@
+/* Cosmic Pop Theme */
+:root {
+  --background-dark: #1A1A2E; /* Deep Space Blue */
+  --primary-purple: #9C27B0; /* Vibrant Purple */
+  --accent-pink: #E91E63;     /* Hot Pink */
+  --accent-cyan: #00BCD4;      /* Bright Cyan */
+  --text-light: #F0F0F0;      /* Off-white */
+  --text-dark: #1A1A2E;
+  --success-green: #4CAF50;
+  --error-red: #F44336;
+  --disabled-gray: #555;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background-dark);
+  color: var(--text-light);
+}
+
+.App {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.auth-container, .dashboard-container, .lobby-container, .answering-container, .voting-container, .results-container, .game-over-container {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0, 188, 212, 0.5);
+  border: 1px solid var(--accent-cyan);
+  width: 100%;
+  max-width: 700px;
+}
+
+.tab-buttons {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--accent-cyan);
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1.2em;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+
+.tab-button.active {
+  opacity: 1;
+  border-bottom: 2px solid var(--accent-pink);
+}
+
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input, textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border-radius: 5px;
+  border: 1px solid var(--primary-purple);
+  background-color: var(--background-dark);
+  color: var(--text-light);
+  font-size: 1em;
+}
+
+textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.btn-primary {
+  background-color: var(--primary-purple);
+  color: var(--text-light);
+  border: none;
+  padding: 15px;
+  width: 100%;
+  border-radius: 5px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+  background-color: #7b1fa2;
+}
+
+.btn-primary:disabled {
+  background-color: var(--disabled-gray);
+  cursor: not-allowed;
+}
+
+.message-area {
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.message-area.success {
+  color: var(--success-green);
+}
+
+.message-area.error {
+  color: var(--error-red);
+}
+
+/* Dashboard Styles */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.btn-logout {
+  background: var(--accent-pink);
+  color: var(--text-light);
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.game-section {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid var(--primary-purple);
+  border-radius: 10px;
+}
+
+.join-divider {
+  font-size: 1.2em;
+  color: var(--accent-cyan);
+  margin: 20px 0;
+}
+
+/* Lobby Styles */
+.lobby-container h2 {
+  color: var(--accent-cyan);
+}
+
+.game-code-display {
+  background: #000;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 1.5em;
+  letter-spacing: 3px;
+  margin: 20px 0;
+}
+
+.game-code-display span {
+  color: var(--accent-pink);
+  font-weight: bold;
+}
+
+.players-list {
+  text-align: left;
+}
+
+.players-list ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.players-list li {
+  background: rgba(0,0,0,0.2);
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
+
+.admin-controls {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--accent-cyan);
+}
+
+.waiting-message {
+  font-size: 1.2em;
+  color: var(--accent-cyan);
+  margin-top: 30px;
+}
+
+/* Answering & Voting Styles */
+.timer-display {
+  font-size: 2em;
+  color: var(--accent-pink);
+  margin-bottom: 20px;
+}
+
+.question-display {
+  font-size: 1.5em;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.role-display {
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+.answers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 30px 0;
+}
+
+.answer-card {
+  background: rgba(0,0,0,0.3);
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 5px solid var(--primary-purple);
+}
+
+.answer-text {
+  font-size: 1.1em;
+}
+
+.answer-author {
+  text-align: right;
+  font-style: italic;
+  color: var(--accent-cyan);
+}
+
+.players-to-vote {
+  list-style: none;
+  padding: 0;
+}
+
+.players-to-vote li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+
+.btn-vote {
+  background: var(--accent-pink);
+  color: var(--text-light);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-vote:disabled {
+  background: var(--disabled-gray);
+  cursor: not-allowed;
+}
+
+.vote-log {
+  margin-top: 20px;
+  text-align: left;
+  max-height: 100px;
+  overflow-y: auto;
+  padding: 10px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 5px;
+}
+
+/* Results & Game Over Styles */
+.impostor-reveal, .game-over-container h2 {
+  font-size: 1.8em;
+  color: var(--accent-pink);
+}
+
+.impostor-reveal span, .game-over-container h2 {
+  font-weight: bold;
+}
+
+.scoreboard {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.scoreboard li {
+  font-size: 1.2em;
+  padding: 5px;
+}
+
+.next-round-message {
+  font-size: 1.2em;
+  color: var(--accent-cyan);
+  margin-top: 20px;
+}
