@@ -17,68 +17,99 @@ const Lobby = () => {
     const [message, setMessage] = useState('');
 
     useEffect(() => {
-        if (!socket) return;
+        console.log('Lobby: Component mounted or socket/gameCode changed.');
+        if (!socket) {
+            console.log('Lobby: Socket not available yet.');
+            return;
+        }
 
-        // Join the game room upon connecting
+        console.log(`Lobby: Joining game room ${gameCode} for user ${userId}`);
         socket.emit('joinGame', { gameCode, userId });
 
-        // Fetch game info from backend for admin_id
         const fetchGameInfo = async () => {
+            console.log('Lobby: Fetching game info...');
             try {
                 const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/games/${gameCode}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
                     const data = await res.json();
+                    console.log('Lobby: Game info fetched successfully.', data);
                     setGame(data.game);
                     setPlayers(data.players);
-                    setIsAdmin(data.game.admin_id === userId);
+                    const adminCheck = data.game.admin_id === userId;
+                    setIsAdmin(adminCheck);
+                    console.log(`Lobby: User is admin: ${adminCheck}`);
+                } else {
+                    console.error('Lobby: Failed to fetch game info.', res.status);
                 }
             } catch (err) {
-                // handle error
+                console.error('Lobby: Error fetching game info.', err);
             }
         };
         fetchGameInfo();
 
         socket.on('playerUpdate', (data) => {
+            console.log('Lobby: Received playerUpdate event.', data);
             setPlayers(data.players);
         });
 
         socket.on('newRound', (data) => {
-            // Navigate to the round, passing state
+            console.log('Lobby: Received newRound event. Navigating to round.', data);
             navigate(`/game/${gameCode}/round`, { state: { roundData: data } });
         });
 
-        // Clean up listeners
         return () => {
+            console.log('Lobby: Cleaning up listeners.');
             socket.off('playerUpdate');
             socket.off('newRound');
         };
     }, [socket, gameCode, userId, token, navigate]);
 
     const handleStartGame = async () => {
-        // Step 1: Start the game
-        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/games/${gameCode}/start`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        console.log('Lobby: Admin starting game...');
+        try {
+            const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/games/${gameCode}/start`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                console.log('Lobby: Game start signal sent successfully.');
+            } else {
+                console.error('Lobby: Failed to start game.', res.status);
+            }
+        } catch (err) {
+            console.error('Lobby: Error starting game.', err);
+        }
     };
 
     const handleSubmitQuestions = async () => {
+        console.log('Lobby: Admin submitting questions...');
         if (!originalQuestion || !impostorQuestion) {
+            console.warn('Lobby: Questions submission blocked. Both questions required.');
             setMessage('Please fill out both questions.');
             return;
         }
-        // Step 2: Submit questions
-        await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/games/${gameCode}/rounds`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ originalQuestion, impostorQuestion })
-        });
+        try {
+            const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/games/${gameCode}/rounds`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ originalQuestion, impostorQuestion })
+            });
+            if (res.ok) {
+                console.log('Lobby: Questions submitted successfully.');
+            } else {
+                console.error('Lobby: Failed to submit questions.', res.status);
+            }
+        } catch (err) {
+            console.error('Lobby: Error submitting questions.', err);
+        }
     };
+
+    console.log('Lobby: Rendering component.', { isAdmin, players: players.length });
 
     return (
         <div className="lobby-container">

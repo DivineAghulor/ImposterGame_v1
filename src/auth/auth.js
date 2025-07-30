@@ -33,7 +33,7 @@ export const login = async (req, res) => {
         if (user && await bcrypt.compare(password, user.password_hash)) {
             const token = jwt.sign({ userId: user.user_id }, JWT_SECRET, { expiresIn: '1h' });
             console.log(`[AUTH] User ${username} (ID: ${user.user_id}) logged in successfully.`);
-            res.status(200).json({ token });
+            res.status(200).json({ token, userId: user.user_id, username: user.username });
         } else {
             console.warn(`[AUTH] Failed login attempt for username: ${username}`);
             res.status(401).json({ message: 'Invalid credentials' });
@@ -43,4 +43,3 @@ export const login = async (req, res) => {
         res.status(500).json({ message: 'Error logging in', error: error.message });
     }
 };
-

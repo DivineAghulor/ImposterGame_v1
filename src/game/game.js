@@ -9,6 +9,7 @@ const gameEmitters = new Map();
 export const playerSockets = new Map(); // Exporting for server.js to use
 // Utility to get game object by code
 export async function getGameByCode(gameCode) {
+    console.log(`[DB] Fetching game data for GameCode: ${gameCode}`);
     const gameResult = await pool.query('SELECT * FROM Games WHERE game_code = $1', [gameCode]);
     return gameResult.rows[0] || null;
 }
