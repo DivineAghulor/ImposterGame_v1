@@ -12,7 +12,8 @@ import {
     startGame, 
     submitQuestions,
     submitAnswer,
-    submitVote
+    submitVote,
+    getGameByCode
 } from './game/game.js';
 import dotenv from 'dotenv';
 

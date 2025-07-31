@@ -37,7 +37,7 @@ const Lobby = () => {
                     console.log('Lobby: Game info fetched successfully.', data);
                     setGame(data.game);
                     setPlayers(data.players);
-                    const adminCheck = data.game.admin_id === userId;
+                    const adminCheck = data.game.admin_id == userId;
                     setIsAdmin(adminCheck);
                     console.log(`Lobby: User is admin: ${adminCheck}`);
                 } else {
