@@ -13,7 +13,8 @@ import {
     submitQuestions,
     submitAnswer,
     submitVote,
-    getGameByCode
+    getGameByCode,
+    playerSockets
 } from './game/game.js';
 import dotenv from 'dotenv';
 
